@@ -1,6 +1,6 @@
 import tweepy
 from hidden import credentials
-
+# hidden module cannot be posted on Github in terms of privacy policy
 
 hidden_keys = credentials()
 auth = tweepy.OAuthHandler(hidden_keys['CONSUMER_TOKEN'], hidden_keys['CONSUMER_SECRET'])
