@@ -5,13 +5,14 @@ import csv
 import time
 
 
-def getting_data(consumer_token, consumer_secret, access_token, access_token_secret):
+def getting_data(consumer_token, consumer_secret, access_token, access_token_secret, hashtag):
     auth = tweepy.OAuthHandler(hidden_keys['CONSUMER_TOKEN'], hidden_keys['CONSUMER_SECRET'])
     auth.set_access_token(hidden_keys['ACCESS_TOKEN'], hidden_keys['ACCESS_TOKEN_SECRET'])
 
+    date_since = '2019-03-20'
     api = tweepy.API(auth)
     # '%23' is URL-encoded '#'
-    data = api.search('%23suicide')
+    data = tweepy.Cursor(api.search, q=f'%23{hashtag}', since=date_since).items(50000)
     return data
 
 
@@ -26,10 +27,10 @@ def forming_json(data):
             text += f'screen_name: {post.user.screen_name}'
             text += f'\ntext: {post.text}'
             text += f'\ncreated_at: {post.created_at}'
-            dict_json['post {}'.format(data.index(post))] = {} #creates another sub-dict for every post
-            dict_json['post {}'.format(data.index(post))]['screen_name'] = post.user.screen_name
-            dict_json['post {}'.format(data.index(post))]['tweet_text'] = post.text
-            dict_json['post {}'.format(data.index(post))]['created_at'] = str(post.created_at)
+            # dict_json['post {}'.format(data.index(post))] = {} #creates another sub-dict for every post
+            # dict_json['post {}'.format(data.index(post))]['screen_name'] = post.user.screen_name
+            # dict_json['post {}'.format(data.index(post))]['tweet_text'] = post.text
+            # dict_json['post {}'.format(data.index(post))]['created_at'] = str(post.created_at)
 
 
             # Checks if there is a Tweet's location
@@ -38,16 +39,16 @@ def forming_json(data):
             if post.place:
                 text += f'\ncountry: {post.place.country}'
                 text += f'\nfull_name: {post.place.full_name}'
-                dict_json['post {}'.format(data.index(post))]['country_tweet'] = post.place.country
-                dict_json['post {}'.format(data.index(post))]['full_place_name'] = post.place.full_name
+                # dict_json['post {}'.format(data.index(post))]['country_tweet'] = post.place.country
+                # dict_json['post {}'.format(data.index(post))]['full_place_name'] = post.place.full_name
             else:
-                dict_json['post {}'.format(data.index(post))]['country_tweet'] = 'null'
-                dict_json['post {}'.format(data.index(post))]['full_place_name'] = 'null'
+                # dict_json['post {}'.format(data.index(post))]['country_tweet'] = 'null'
+                # dict_json['post {}'.format(data.index(post))]['full_place_name'] = 'null'
                 if post.user.location:
                     text += f'\nlocation: {post.user.location}'
-                    dict_json['post {}'.format(data.index(post))]['user_location'] = post.user.location
+                    # dict_json['post {}'.format(data.index(post))]['user_location'] = post.user.location
                 else:
-                    dict_json['post {}'.format(data.index(post))]['user_location'] = 'null'
+                    # dict_json['post {}'.format(data.index(post))]['user_location'] = 'null'
                     text += '\n' + 'location: No location is presented'
             text_list.append(text)
             text = ''
@@ -75,8 +76,23 @@ def write_into_csv(dict_json):
 def writing_into_txt(consumer_token, consumer_secret, access_token, access_token_secret):
     text = []
 
+    counter = 30000
+
     while True:
-        data = getting_data(consumer_token, consumer_secret, access_token, access_token_secret)
+        if counter > 25000:
+            hashtag = 'суицид'
+            counter -= 1
+        elif 15000 < counter < 25000:
+            hashtag = 'suicide'
+            counter -= 1
+        elif 5000 < сounter < 15000:
+            hashtag = 'самоубийство'
+            counter -= 1
+        else:
+            hashtag = 'самогубство'
+            counter -= 1
+
+        data = getting_data(consumer_token, consumer_secret, access_token, access_token_secret, hashtag)
         to_write = forming_json(data)
 
         for post in to_write:
@@ -90,8 +106,6 @@ def writing_into_txt(consumer_token, consumer_secret, access_token, access_token
                 print('Waiting for data to reload')
 
         time.sleep(60)
-
-
 
 if __name__ == '__main__':
     hidden_keys = credentials()
