@@ -149,12 +149,3 @@ class TweetsByCountries:
         '''
         with open('tweets_amount.json', 'w', encoding='utf-8') as file:
             json.dump({'CURRENT_POSITION': 0}, file, ensure_ascii=False)
-
-#
-if __name__ == '__main__':
-    data_base = TweetsByCountries('Twitter_data.db')
-    data_base._initial_file()
-#
-#     data_base.write_into_file()
-#     print(data_base.current_position)
-#     print(data_base.tweets_amount_by_countries)
