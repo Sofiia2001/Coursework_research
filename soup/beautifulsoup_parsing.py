@@ -23,12 +23,12 @@ def write_into_database(data):
     connection = sqlite3.connect('Official_data.db')
     cursor = connection.cursor()
 
-    cursor.execute("""CREATE TABLE WHO (
-                        country text,
-                        suicide_rate text
-                        )""")
-
-    connection.commit()
+    # cursor.execute("""CREATE TABLE WHO (
+    #                     country text,
+    #                     suicide_rate text
+    #                     )""")
+    #
+    # connection.commit()
 
     for ind, tpl_info in enumerate(data.items()):
         write = "INSERT INTO WHO (country, suicide_rate) VALUES (?, ?)"
