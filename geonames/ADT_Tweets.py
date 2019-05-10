@@ -16,7 +16,6 @@ class TweetsByCountries:
 
         :param data_base: string name of data base to use
         '''
-        self._initial_file()
         with open('tweets_amount.json') as file:
             self.tweets_amount_by_countries = json.load(file)
             self.current_position = self.tweets_amount_by_countries['CURRENT_POSITION']
@@ -94,21 +93,24 @@ class TweetsByCountries:
         '''
         cleared_locations = self.clean_locations()
 
-        counter = 50
+        counter = 1000
 
         with sqlite3.connect('Cities_data.db') as connection:
             cursor = connection.cursor()
 
             for loc in tqdm(range(self.current_position, self.current_position + counter)):
-                counter -= 1
+                # counter -= 1
                 select = "SELECT country_name FROM CITIES WHERE city=?"
                 cursor.execute(select, [(cleared_locations[loc])])
                 res = cursor.fetchall()
 
                 if res:
                     if len(res) > 1:
-                        g = geocoder.geonames(loc, key='sofiiatatosh')
-                        res = g.country
+                        try:
+                            g = geocoder.geonames(loc, key='sofiiatatosh')
+                            res = g.country
+                        except:
+                            res = res[0][0]
 
                     elif len(res) == 1:
                         res = res[0][0]
@@ -141,11 +143,12 @@ class TweetsByCountries:
         with open('tweets_amount.json', 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False)
 
-    def _initial_file(self):
-        '''
-        A method to create initial file view
 
-        :return:
-        '''
-        with open('tweets_amount.json', 'w', encoding='utf-8') as file:
-            json.dump({'CURRENT_POSITION': 0}, file, ensure_ascii=False)
+def initial_file():
+    '''
+    A method to create initial file view
+
+    :return:
+    '''
+    with open('tweets_amount.json', 'w', encoding='utf-8') as file:
+        json.dump({'CURRENT_POSITION': 0}, file, ensure_ascii=False)
