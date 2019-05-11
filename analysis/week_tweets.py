@@ -5,31 +5,30 @@ import geocoder
 
 
 class WeekTweets:
-    def __init__(self):
+    def __init__(self, date=''):
         '''
         Asks user to input a date of a week to form a whole week
         '''
-        self.date = ''
+        self.date = date
         self._week_list = []
         self._tweets_week_dict = {}
-        self.num_of_tweets = {}
+        # self.num_of_tweets = {}
 
     def select_week(self):
         '''
         Creates a week due to a correct calendar
 
-        :return: None
+        :return: None   
         '''
-        self.date = input('Enter the date [dd.mm]: ')
-        assert 0 < int(self.date[:2]) <= 31, 'Date is not correct'
-        assert 0 < int(self.date[3:]) <= 12, 'Date is not correct'
-
-        date = datetime.datetime(2019, int(self.date[3:]), int(self.date[:2]))
-        for i in range(date.weekday(), 0, -1):
-            self._week_list.append((date - datetime.timedelta(days=i)).strftime('%Y-%m-%d'))
-        self._week_list.append(date.strftime('%Y-%m-%d'))
-        for j in range(1, 7 - date.weekday()):
-            self._week_list.append((date + datetime.timedelta(days=j)).strftime('%Y-%m-%d'))
+        try:
+            date = datetime.datetime(2019, int(self.date[3:]), int(self.date[:2]))
+            for i in range(date.weekday(), 0, -1):
+                self._week_list.append((date - datetime.timedelta(days=i)).strftime('%Y-%m-%d'))
+            self._week_list.append(date.strftime('%Y-%m-%d'))
+            for j in range(1, 7 - date.weekday()):
+                self._week_list.append((date + datetime.timedelta(days=j)).strftime('%Y-%m-%d'))
+        except:
+            return 'This date does not exist'
 
     def tweets_for_week(self):
         '''
@@ -62,9 +61,9 @@ class WeekTweets:
                 date = datetime.datetime(int(key[0]), int(key[1]), int(key[2]))
         return date.strftime('%A')
 
-    def tweets_for_week_day(self):
+    def _tweets_for_week_day(self):
         '''
-        Returns number of tweets on a certain day from different countries
+        Returns number of tweets on a certain day
 
         :return: amount of tweets on mondays(eg)
         '''
@@ -81,7 +80,7 @@ class WeekTweets:
             'sun': 'Sunday'
         }
 
-        self.num_of_tweets = {v: {'general': 0, 'dates': set(), 'posts': {}} for v in weekdays.values()}
+        num_of_tweets = {v: {'general': 0, 'dates': set(), 'posts': {}} for v in weekdays.values()}
 
         with sqlite3.connect('Twitter_data.db') as connection:
             cursor = connection.cursor()
@@ -96,14 +95,25 @@ class WeekTweets:
                 splitted = d.split('-')
                 day = datetime.datetime(int(splitted[0]), int(splitted[1]), int(splitted[2])).strftime('%A')
 
-                if day in self.num_of_tweets:
-                    self.num_of_tweets[day]['general'] += 1
-                    self.num_of_tweets[day]['dates'].add(d)
+                if day in num_of_tweets:
+                    num_of_tweets[day]['general'] += 1
+                    num_of_tweets[day]['dates'].add(d)
+        return num_of_tweets
+
+    def tweets_by_countries_on_day(self):
+        '''
+        Returns number of tweets on a certain day from different countries
+
+        :return: amount of tweets on mondays(eg)
+        '''
+        num_of_tweets = self._tweets_for_week_day()
+        with sqlite3.connect('Twitter_data.db') as connection:
+            cursor = connection.cursor()
 
             user_day = 'Monday' #only as example
             locations = []
             countries = {}
-            for u_date in self.num_of_tweets[user_day]['dates']:
+            for u_date in num_of_tweets[user_day]['dates']:
                 selection = "SELECT * FROM TWITTER WHERE created_at LIKE ?"
                 cr_at = f'%{u_date}%'
                 cursor.execute(selection, [(cr_at)])
@@ -112,8 +122,7 @@ class WeekTweets:
                 for p in posts:
                     if 'No location' not in p[3]: locations.append(p[3].replace(': ', '').strip())
 
-                self.num_of_tweets[user_day]['posts'][u_date] = posts
-
+                num_of_tweets[user_day]['posts'][u_date] = posts
 
             with sqlite3.connect('Cities_data.db') as connect:
                 for loc in locations:
@@ -136,3 +145,16 @@ class WeekTweets:
                     countries[country] += 1
 
         return countries
+
+    def maximum_tweets_day(self):
+        '''
+        Returns a day when there was the majority of suicide tweets posted
+        '''
+        to_return = ''
+        num_of_tweets = self._tweets_for_week_day()
+        maxx = max([v['general'] for v in num_of_tweets.values()])
+        for day in num_of_tweets:
+            if num_of_tweets[day]['general'] == maxx:
+                to_return = day
+        return to_return
+
